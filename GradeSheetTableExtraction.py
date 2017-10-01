@@ -1,11 +1,11 @@
-import sys
-import os
-script_dir = os.path.dirname(os.path.realpath('__file__'))
-rel_path = '\\library'
+#import sys
+#import os
+#script_dir = os.path.dirname(os.path.realpath('__file__'))
+#rel_path   = '\\library'
+# Add the directory containing your module to the Python path (wants absolute paths)
+#sys.path.append(os.path.abspath(script_dir+rel_path))
 
-sys.path.insert(0, script_dir+rel_path)
-
-import cut_out_tables
+from cut_out_tables import *
 datadir   = 'X:\\martin_image_data\\Bjuv Stad\\Sheet2\\'    
 #savedir   = 'Z:\\faellesmappe\\cmd\\MartinKarlsson\\tiny_pics\\'
 imagesall =  getImagesInDirectory(datadir)
