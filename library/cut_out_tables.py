@@ -1,29 +1,57 @@
 #This is for Github
-from IPython import get_ipython
-get_ipython().magic('reset -sf')
+#from IPython import get_ipython
+#get_ipython().magic('reset -sf')
 import numpy as np
 import cv2
 from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
-from vectors import *
 from skimage import transform
 from skimage import filters
 from skimage import feature
 from skimage import morphology
 from scipy import signal
-import os
-import sys
 from os import path
-from CAIS import *
-import math
+#from CAIS import *
 np.set_printoptions(threshold=50)
 from skimage.transform import (hough_line, hough_line_peaks,probabilistic_hough_line)
 from skimage.feature import canny
 from skimage.filters import threshold_otsu
 from skimage.filters import threshold_isodata
 from imutils import contours as contours_
-import pandas as pd
+#import pandas as pd
+import math
 from sklearn.preprocessing import StandardScaler
+
+def dot(v,w):
+    x,y,z = v
+    X,Y,Z = w
+    return x*X + y*Y + z*Z
+  
+def length(v):
+    x,y,z = v
+    return math.sqrt(x*x + y*y + z*z)
+  
+def vector(b,e):
+    x,y,z = b
+    X,Y,Z = e
+    return (X-x, Y-y, Z-z)
+  
+def unit(v):
+    x,y,z = v
+    mag = length(v)
+    return (x/mag, y/mag, z/mag)
+  
+def distance(p0,p1):
+    return length(vector(p0,p1))
+  
+def scale(v,sc):
+    x,y,z = v
+    return (x * sc, y * sc, z * sc)
+  
+def add(v,w):
+    x,y,z = v
+    X,Y,Z = w
+    return (x+X, y+Y, z+Z)
   
 def pnt2line(pnt, start, end):
     line_vec = vector(start, end)
@@ -314,45 +342,3 @@ def horisontal_lines(v1):
                 cv2.polylines(v1cleansheet,np.int32([ddd]),0,(255,255,255),2)
     return v1cleansheet         
 
-datadir   = 'X:\\martin_image_data\\Bjuv Stad\\Sheet2\\'    
-savedir   = 'Z:\\faellesmappe\\cmd\\MartinKarlsson\\tiny_pics\\'
-imagesall =  getImagesInDirectory(datadir)
-minipics = []
-for pics in imagesall:
-    print(pics)
-    try:
-        img2                 = cv2.imread(datadir + pics,0)
-        y1,x1,v1,h1          = cropping_GS_images(img2)
-        v1cleansheet         = horisontal_lines(v1)
-        h1cleansheet         = horisontal_lines(h1)
-        img2_cropped         = img2[y1[0]:y1[1],x1[0]:x1[1]]
-        ddd                  = cv2.add(v1cleansheet.T,h1cleansheet)
-        dd1, ctsk, hierarchy = cv2.findContours(ddd.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        
-        areaI    = []
-        wI       = [] 
-        hI       = []
-        idx      = 0
-        ratio    = (28,28)  
-        for c_ in ctsk:
-            x,y,w,h         = cv2.boundingRect(c_)    
-            area            = cv2.contourArea(c_)
-            image           = img2_cropped.copy()[y:y+h,x:x+w]    
-            if w>40 and w<60 and h>60 and h<80:
-                try:
-                    tresh            = threshold_otsu(image.copy())                          
-                    __,image         = cv2.threshold(image.copy(),tresh,255,0)
-                    wI.append(w)
-                    hI.append(h)
-                    areaI.append(area)
-                    dsf_add          = cv2.resize(image,ratio,interpolation = cv2.INTER_AREA)
-                    minipics.append(dsf_add)          
-                    cv2.imwrite(savedir+"tiny_small"+str(idx)+"_"+pics,dsf_add)
-                    idx              = idx + 1
-                except:
-                    pass    
-    except:
-        pass
-    
-    minipics_np = np.asarray(minipics)
-    np.save(savedir+"allplotssmall", minipics_np)
