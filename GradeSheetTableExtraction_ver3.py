@@ -1,3 +1,4 @@
+#This is for Github
 from IPython import get_ipython
 get_ipython().magic('reset -sf')
 import numpy as np
