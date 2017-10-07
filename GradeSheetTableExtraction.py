@@ -1,16 +1,21 @@
-#import sys
-#import os
-#script_dir = os.path.dirname(os.path.realpath('__file__'))
-#rel_path   = '\\library'
-# Add the directory containing your module to the Python path (wants absolute paths)
-#sys.path.append(os.path.abspath(script_dir+rel_path))
+#-----------------------------------------------------
+# Reading full grading image and cut out mini_pics
+#-----------------------------------------------------
 
+# 1. All images are read
+# Then sequentially for each image:
+# 2. Image is cropped
+# 3. The vertical lines are identified
+# 4. The horizontal lines are identified
+# 5. The countors in the quadrants (area in between intersecting vertical and horisontal lines) are detected
+# 6. If the identified contours/quadrants are of the "right" size the corresponding area in the original image
+#    is saved as a mini_pics (stored on drive as jpeg or stores in np.array and saved on drive)
 from cut_out_tables import *
 datadir   = 'X:\\martin_image_data\\Bjuv Stad\\Sheet2\\'    
-#savedir   = 'Z:\\faellesmappe\\cmd\\MartinKarlsson\\tiny_pics\\'
+savedir   = 'Z:\\faellesmappe\\cmd\\MartinKarlsson\\tiny_pics\\'
 imagesall =  getImagesInDirectory(datadir)
 minipics = []
-for pics in imagesall:
+for pics in imagesall[:2]:
     print(pics)
     try:
         img2                 = cv2.imread(datadir + pics,0)
@@ -39,7 +44,7 @@ for pics in imagesall:
                     areaI.append(area)
                     dsf_add          = cv2.resize(image,ratio,interpolation = cv2.INTER_AREA)
                     minipics.append(dsf_add)          
-#                    cv2.imwrite(savedir+"tiny_small"+str(idx)+"_"+pics,dsf_add)
+                    cv2.imwrite(savedir+"tiny_small"+str(idx)+"_"+pics,dsf_add)
                     idx              = idx + 1
                 except:
                     pass    
