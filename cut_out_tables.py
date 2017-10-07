@@ -344,3 +344,63 @@ def horisontal_lines(v1):
                 cv2.polylines(v1cleansheet,np.int32([ddd]),0,(255,255,255),2)
     return v1cleansheet         
 
+def horizontal_sweepline(v1):
+    y_len,x_len         = v1.shape 
+    v1cleansheet        = v1.copy()
+    #v1cleansheet[:,:]   = 0
+    bigC                = []     
+    bigRC               = []
+    __, ctsk, hierarchy = cv2.findContours(v1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)    
+    for c in ctsk:
+        x,y,w,h = cv2.boundingRect(c)
+        #if h>15:
+        if w>5:        
+            bigC.append(c)
+            
+    (cX,_) = contours_.sort_contours(bigC, method="left-to-right")  
+
+    while len(cX)>3:
+      (cX,_)    = contours_.sort_contours(cX, method="left-to-right") 
+      ctsk_sort = cX
+      idx       = 0
+      bigC      = []
+      idz       = []    
+      for c in ctsk_sort:
+        x,y,w,h = cv2.boundingRect(c)
+        M       = cv2.moments(c)
+        if idx==0:
+            #bigC.append((x,int(y+0.5*h)))
+            #bigC.append((x+w,int(y+0.5*h)))
+            try:
+             bigC.append((int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])))  
+            except:
+             pass 
+            idz.append(idx)
+            y_up = min(y+30,y_len)
+            y_dw = max(y-30,0)
+        else:
+            if y<y_up and y>y_dw:     
+                #bigC.append((x,int(y+0.5*h)))
+                #bigC.append((x+w,int(y+0.5*h)))                
+                try:
+                  bigC.append((int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])))  
+                except:
+                   pass 
+                idz.append(idx)
+                y_up = min(y+30,y_len)
+                y_dw = max(y-30,0)                                
+        idx += 1
+      cX = np.delete(cX,idz)    
+      bigRC.append(bigC)     
+    
+ 
+    m= 10000
+    for xx in bigRC:
+        if len(xx)>8:
+            z   = np.polyfit([xx[i][0] for i in range(len(xx))],[xx[i][1] for i in range(len(xx))],1)
+            f   = np.poly1d(z)
+            xs  = np.linspace(0,m,1000)
+            ys  = f(xs)
+            ddd = np.vstack((xs,ys)).T
+            cv2.polylines(v1cleansheet,np.int32([ddd]),0,(255,255,255),2)
+    return(v1cleansheet)
