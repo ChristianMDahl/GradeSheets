@@ -111,7 +111,8 @@ def table_lines(img2):
     laplacian = cv2.Laplacian(blur,cv2.CV_8UC1)
 #    lines     = cv2.HoughLinesP(laplacian,1,np.pi/360, 2, None, 2,.1 )
      # Vertical lines
-    lines = cv2.HoughLinesP(laplacian, 1, np.pi, threshold=100, minLineLength=50, maxLineGap=1)
+    lines = cv2.HoughLinesP(laplacian, 1, np.pi, threshold=100, minLineLength=25, maxLineGap=1) 
+    
     dds[:,:] = 255
     for i in range(len(lines)):    
         x1 = lines[i,0,0]
@@ -122,9 +123,11 @@ def table_lines(img2):
 
     #Vertical
     dilStructure         = cv2.getStructuringElement(cv2.MORPH_RECT, (1,25))
+    #dilStructure         = cv2.getStructuringElement(cv2.MORPH_RECT, (1,15))
     dilution             = cv2.erode(255-dds.copy(),dilStructure,iterations = 1)
 
     blur                 = cv2.GaussianBlur(dilution.copy(),(7,7),0)
+    blur                 = cv2.GaussianBlur(dilution.copy(),(3,3),0)
     dilStructure         = cv2.getStructuringElement(cv2.MORPH_RECT, (1,10))
     dilution             = cv2.dilate(blur,dilStructure,iterations = 1)
 
@@ -132,7 +135,8 @@ def table_lines(img2):
     img,vertical         = cv2.threshold(dilution,tresh,255,0)
 
    # Horizontal lines
-    lines = cv2.HoughLinesP(laplacian, 1, np.pi / 10, threshold=100, minLineLength=50, maxLineGap=1)
+    lines = cv2.HoughLinesP(laplacian, 1, np.pi / 10, threshold=100, minLineLength=5, maxLineGap=1)
+    
     dds[:,:] = 255
     for i in range(len(lines)):    
         x1 = lines[i,0,0]
@@ -142,9 +146,10 @@ def table_lines(img2):
         cv2.line(dds,(x1,y1),(x2,y2),(0,0,255),1)
     #Horizontal
     dilStructure         = cv2.getStructuringElement(cv2.MORPH_RECT, (25,1))
+    #dilStructure         = cv2.getStructuringElement(cv2.MORPH_RECT, (30,1))
     dilution             = cv2.erode(255-dds.copy(),dilStructure,iterations = 1)
-
-    blur                 = cv2.GaussianBlur(dilution.copy(),(7,7),0)
+    
+    blur                 = cv2.GaussianBlur(dilution.copy(),(3,3),0)
     #blur                 = cv2.GaussianBlur(blur,(7,7),0)
     #blur                 = cv2.GaussianBlur(blur,(7,7),0)
     dilStructure         = cv2.getStructuringElement(cv2.MORPH_RECT, (10,1))
@@ -153,6 +158,26 @@ def table_lines(img2):
     tresh                = threshold_otsu(dilution)
     img,horizontal       = cv2.threshold(dilution,tresh,255,0)
     
+    mask = np.zeros(vertical.shape, np.uint8)
+      
+    __, ctsk, hierarchy = cv2.findContours(vertical.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)    
+    bigC = []
+    for c in ctsk:
+        x,y,w,h = cv2.boundingRect(c)
+        if h<40:
+        #if w<20: 
+           bigC.append(c)
+    
+    cv2.drawContours(mask, bigC, -1, (255,255,255), -1)
+    
+
+#    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+#cv2.resizeWindow('image', ratio[1],ratio[0])
+#    cv2.resizeWindow('image', 50,50)
+#    cv2.imshow('image',mask)
+#    cv2.waitKey(0)
+#    cv2.destroyAllWindows()
+    vertical = cv2.subtract(vertical,mask)
     return(vertical,horizontal)
 
 def cropping_GS_images(img2):
@@ -347,60 +372,53 @@ def horisontal_lines(v1):
 def horizontal_sweepline(v1):
     y_len,x_len         = v1.shape 
     v1cleansheet        = v1.copy()
-    #v1cleansheet[:,:]   = 0
-    bigC                = []     
-    bigRC               = []
+    #v1cleansheet[:,:]   = 0    
+    bigC = []
+    bigRC =[]
     __, ctsk, hierarchy = cv2.findContours(v1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)    
     for c in ctsk:
-        x,y,w,h = cv2.boundingRect(c)
-        #if h>15:
-        if w>5:        
-            bigC.append(c)
-            
-    (cX,_) = contours_.sort_contours(bigC, method="left-to-right")  
-
-    while len(cX)>3:
-      (cX,_)    = contours_.sort_contours(cX, method="left-to-right") 
-      ctsk_sort = cX
-      idx       = 0
-      bigC      = []
-      idz       = []    
-      for c in ctsk_sort:
-        x,y,w,h = cv2.boundingRect(c)
-        M       = cv2.moments(c)
-        if idx==0:
-            #bigC.append((x,int(y+0.5*h)))
-            #bigC.append((x+w,int(y+0.5*h)))
-            try:
-             bigC.append((int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])))  
-            except:
-             pass 
-            idz.append(idx)
-            y_up = min(y+30,y_len)
-            y_dw = max(y-30,0)
-        else:
-            if y<y_up and y>y_dw:     
-                #bigC.append((x,int(y+0.5*h)))
-                #bigC.append((x+w,int(y+0.5*h)))                
-                try:
-                  bigC.append((int(M["m10"]/M["m00"]),int(M["m01"]/M["m00"])))  
-                except:
-                   pass 
-                idz.append(idx)
-                y_up = min(y+30,y_len)
-                y_dw = max(y-30,0)                                
-        idx += 1
-      cX = np.delete(cX,idz)    
-      bigRC.append(bigC)     
+            x,y,w,h = cv2.boundingRect(c)
+            #if h>15:
+            if w>30:        
+                bigC.append(c)
+                
+    (cX,_) = contours_.sort_contours(bigC, method="right-to-left")    
     
- 
-    m= 10000
+    while len(cX)>2:
+        (cX,_) = contours_.sort_contours(cX, method="right-to-left") 
+        ctsk_sort = cX
+        idx = 0
+        bigC = []
+        idz = []
+        for c in ctsk_sort:
+            x,y,w,h = cv2.boundingRect(c)
+            if idx==0:
+                bigC.append((int(x+0.5*w),int(y+0.5*h)))
+                idz.append(idx)
+                y_up = max(y+20,0)
+                y_dw = max(y-20,0)                
+            else:
+                if y<y_up and y>y_dw:
+                    bigC.append((int(x+0.5*w),int(y+0.5*h)))
+                    idz.append(idx)
+                    y_up = min(y+20,y_len)
+                    y_dw = max(y-20,0)    
+            idx += 1
+        cX = np.delete(cX,idz)    
+        bigRC.append(bigC)     
+        
     for xx in bigRC:
-        if len(xx)>8:
-            z   = np.polyfit([xx[i][0] for i in range(len(xx))],[xx[i][1] for i in range(len(xx))],1)
+        if len(xx)>4:
+            z   = np.polyfit([xx[i][0] for i in range(len(xx))],[xx[i][1] for i in range(len(xx))],2)
             f   = np.poly1d(z)
-            xs  = np.linspace(0,m,1000)
+            xs  = np.linspace(0,10000,10000)
             ys  = f(xs)
             ddd = np.vstack((xs,ys)).T
             cv2.polylines(v1cleansheet,np.int32([ddd]),0,(255,255,255),2)
-    return(v1cleansheet)
+            cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+#cv2.resizeWindow('image', ratio[1],ratio[0])
+            cv2.resizeWindow('image', 50,50)
+            cv2.imshow('image',v1cleansheet)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+    return v1cleansheet         
